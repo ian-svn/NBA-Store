@@ -23,7 +23,7 @@ export const PRODUCTS_QUERY = groq`
     slug,
     price,
     description,
-    images,
+    "images": images[defined(asset)],
     inStock
   }
 `;
@@ -35,7 +35,7 @@ export const PRODUCT_BY_SLUG_QUERY = groq`
     slug,
     price,
     description,
-    images,
+    "images": images[defined(asset)],
     inStock
   }
 `;
@@ -47,7 +47,7 @@ export const PRODUCTS_BY_IDS_QUERY = groq`
     slug,
     price,
     description,
-    images,
+    "images": images[defined(asset)],
     inStock
   }
 `;
