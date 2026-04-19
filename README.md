@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tienda NBA (Next.js + Sanity + Mercado Pago)
 
-## Getting Started
+E-commerce simple para aprender:
+- Productos administrados desde **Sanity** (nombre, precio, descripción, imágenes y stock).
+- Front en **Next.js** con catálogo, detalle de producto y carrito.
+- Checkout en **Mercado Pago**.
 
-First, run the development server:
+## 1) Instalar y correr
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrí `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 2) Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Creá un archivo `.env.local` en la raíz:
 
-## Learn More
+```env
+NEXT_PUBLIC_SANITY_PROJECT_ID=tu_project_id
+NEXT_PUBLIC_SANITY_DATASET=production
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-xxxxxxxxxxxxxxxx
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+Notas:
+- `MERCADOPAGO_ACCESS_TOKEN` define **a qué cuenta le llega el dinero**.
+- Si querés cobrar en tu alias/cvu `ianvilap`, ese token debe ser de esa misma cuenta de Mercado Pago.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 3) Editar productos desde Sanity
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Entrá a `http://localhost:3000/studio`.
+2. Creá/editar documentos de tipo `Producto`.
+3. Campos disponibles:
+   - `Nombre`
+   - `Slug`
+   - `Precio`
+   - `Descripción`
+   - `Imágenes`
+   - `En stock`
 
-## Deploy on Vercel
+Todo lo que cambies ahí impacta en la tienda.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 4) Flujo de compra
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Cliente agrega productos al carrito.
+2. Hace click en "Pagar con Mercado Pago".
+3. Se crea una preferencia en `/api/checkout`.
+4. Mercado Pago redirige a:
+   - `/pago/exito`
+   - `/pago/error`
+   - `/pago/pendiente`
+
+## Estructura simple (para aprender)
+
+- `src/app/page.tsx`: home y catálogo.
+- `src/app/producto/[slug]/page.tsx`: detalle de producto.
+- `src/app/carrito/page.tsx`: carrito y checkout.
+- `src/app/api/checkout/route.ts`: integración con Mercado Pago.
+- `src/context/cart-context.tsx`: estado del carrito (persistido en localStorage).
+- `sanity/schemaTypes/product.ts`: schema del producto en Sanity.
