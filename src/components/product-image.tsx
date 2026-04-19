@@ -20,6 +20,23 @@ export function ProductImage({
   className,
   priority,
 }: Props) {
+  const hasAsset = Boolean(
+    image &&
+      typeof image === "object" &&
+      "asset" in image &&
+      image.asset
+  );
+
+  if (!hasAsset) {
+    return (
+      <div
+        aria-label={alt}
+        className={className}
+        style={{ width: "100%", height: "100%", backgroundColor: "#111827" }}
+      />
+    );
+  }
+
   const src = urlFor(image).width(width * 2).height(height * 2).quality(85).url();
   return (
     <Image
