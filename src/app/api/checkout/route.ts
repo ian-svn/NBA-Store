@@ -14,12 +14,12 @@ export async function POST(req: Request) {
     );
   }
 
-  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
   if (!token) {
     return NextResponse.json(
       {
         error:
-          "Falta MERCADOPAGO_ACCESS_TOKEN. Creá credenciales en developers.mercadopago.com (misma cuenta que tu alias).",
+          "Falta MERCADOPAGO_ACCESS_TOKEN en el servidor. Agregalo en .env.local, guardá el archivo y reiniciá npm run dev.",
       },
       { status: 500 }
     );
@@ -128,11 +128,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ url: payUrl });
-  } catch {
+  } catch (err) {
+    console.error("[checkout] Mercado Pago:", err);
     return NextResponse.json(
       {
         error:
-          "No se pudo crear la preferencia de Mercado Pago. Verificá que MERCADOPAGO_ACCESS_TOKEN sea de la cuenta que cobra (ej: alias/cvu ianvilap).",
+          "Mercado Pago rechazó la operación. Revisá que MERCADOPAGO_ACCESS_TOKEN sea el Access Token de producción o prueba (panel de desarrolladores), sin comillas ni espacios extra, y que coincida con la cuenta que cobra.",
       },
       { status: 502 }
     );

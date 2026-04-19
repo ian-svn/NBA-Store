@@ -26,8 +26,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 Notas:
-- `MERCADOPAGO_ACCESS_TOKEN` define **a qué cuenta le llega el dinero**.
-- Si querés cobrar en tu alias/cvu `ianvilap`, ese token debe ser de esa misma cuenta de Mercado Pago.
+- `MERCADOPAGO_ACCESS_TOKEN` debe ser el **Access Token** de la cuenta de Mercado Pago donde querés cobrar (producción o prueba, según corresponda).
+- Después de editar `.env.local`, reiniciá `npm run dev` para que Next.js cargue los cambios.
 
 ## 3) Editar productos desde Sanity
 
