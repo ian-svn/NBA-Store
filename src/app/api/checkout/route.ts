@@ -14,12 +14,12 @@ export async function POST(req: Request) {
     );
   }
 
-  const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
+  const token = process.env.MP_ACCESS_TOKEN?.trim();
   if (!token) {
     return NextResponse.json(
       {
         error:
-          "Falta MERCADOPAGO_ACCESS_TOKEN en el servidor. Agregalo en .env.local, guardá el archivo y reiniciá npm run dev.",
+          "Falta MP_ACCESS_TOKEN en el servidor. Asegurate de definirlo en .env.local sin comillas ni espacios extra, guardá el archivo y reiniciá npm run dev.",
       },
       { status: 500 }
     );
@@ -98,29 +98,66 @@ export async function POST(req: Request) {
     });
   }
 
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  const host = req.headers.get("host");
+  const requestOrigin = (() => {
+    try {
+      return new URL(req.url).origin;
+    } catch {
+      if (host) {
+        return `${forwardedProto ?? "http"}://${host}`;
+      }
+      return undefined;
+    }
+  })();
+
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    new URL(req.url).origin;
+    requestOrigin;
+
+  if (!baseUrl) {
+    return NextResponse.json(
+      {
+        error:
+          "No se pudo determinar la URL base. Definí NEXT_PUBLIC_APP_URL en .env.local o asegurate de que el host esté disponible en la solicitud.",
+      },
+      { status: 500 }
+    );
+  }
+
+  const successUrl = `${baseUrl}/pago/exito`;
+  const failureUrl = `${baseUrl}/pago/error`;
+  const pendingUrl = `${baseUrl}/pago/pendiente`;
+
+  console.log("[checkout] baseUrl:", baseUrl);
+  console.log("[checkout] successUrl:", successUrl);
+  console.log("[checkout] failureUrl:", failureUrl);
+  console.log("[checkout] pendingUrl:", pendingUrl);
 
   const mp = new MercadoPagoConfig({ accessToken: token });
   const preference = new Preference(mp);
 
   try {
-    const result = await preference.create({
-      body: {
-        items: mpItems,
-        back_urls: {
-          success: `${baseUrl}/pago/exito`,
-          failure: `${baseUrl}/pago/error`,
-          pending: `${baseUrl}/pago/pendiente`,
-        },
-        auto_return: "approved",
-        statement_descriptor: "TIENDA NBA",
+    const preferenceBody = {
+      items: mpItems,
+      back_urls: {
+        success: successUrl,
+        failure: failureUrl,
+        pending: pendingUrl,
       },
+      // auto_return: "approved", // Comentado para desarrollo local con http://localhost
+      statement_descriptor: "TIENDA NBA",
+    };
+
+    console.log("[checkout] preferenceBody:", JSON.stringify(preferenceBody, null, 2));
+
+    const result = await preference.create({
+      body: preferenceBody,
     });
 
     const payUrl = result.init_point ?? result.sandbox_init_point;
     if (!payUrl) {
+      console.error("[checkout] Mercado Pago missing pay URL:", result);
       return NextResponse.json(
         { error: "Mercado Pago no devolvió URL de pago." },
         { status: 502 }
@@ -129,11 +166,15 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: payUrl });
   } catch (err) {
-    console.error("[checkout] Mercado Pago:", err);
+    console.error("[checkout] Mercado Pago exception:", err);
+    if (err instanceof Error) {
+      console.error("[checkout] Error message:", err.message);
+      console.error("[checkout] Error stack:", err.stack);
+    }
     return NextResponse.json(
       {
         error:
-          "Mercado Pago rechazó la operación. Revisá que MERCADOPAGO_ACCESS_TOKEN sea el Access Token de producción o prueba (panel de desarrolladores), sin comillas ni espacios extra, y que coincida con la cuenta que cobra.",
+          "Hubo un error al conectar con Mercado Pago. Revisa el token y la configuración de tu cuenta.",
       },
       { status: 502 }
     );
